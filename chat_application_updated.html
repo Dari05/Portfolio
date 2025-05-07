@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Chat Application</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <style>
+    * {
+      font-family: 'Inter', sans-serif;
+      color: #444444;
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+    }
+
+    input {
+      box-shadow: none;
+      display: block;
+    }
+
+    button {
+      border: none;
+    }
+
+    .page {
+      width: 100%;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 32px;
+      border-bottom: 1px solid #E5E7EB
+    }
+
+    .content {
+      height: 100%;
+      background: #F9FAFB;
+      overflow: scroll;
+    }
+
+    .width-container {
+      padding: 0 32px;
+      max-width: 896px;
+      margin: 0 auto;
+    }
+
+    .dialog {
+      padding-top: 27px;
+      padding-bottom: 27px;
+      display: flex;
+      flex-direction: column;
+      gap: 27px;
+    }
+
+    .footer {
+      border-top: 1px solid #E5E7EB;
+    }
+
+    .form {
+      display: flex;
+      padding-top: 16px;
+      padding-bottom: 16px;
+      gap: 16px;
+    }
+
+    .input {
+      width: 100%;
+      height: 46px;
+      border-radius: 12px;
+      padding: 12px 16px;
+      border: 1px solid #E5E7EB;
+    }
+
+    .button {
+      width: 63px;
+      padding: 12px 16px;
+      border-radius: 4px;
+      background: #000000;
+      font-size: 14px;
+      color: white;
+    }
+
+    .message-container {
+      display: flex;
+    }
+
+    .message-user {
+      max-width: 70%;
+      padding: 8px 16px;
+      background: #000000;
+      color: white;
+      border-radius: 16px;
+      margin-left: auto;
+    }
+
+    .message-assistant {
+      max-width: 70%;
+      padding: 8px 16px;
+      background: #F3F4F6;
+      border-radius: 16px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="page">
+  <div class="header">
+    <img class="logo" src="https://fs.getcourse.ru/fileservice/file/download/a/534336/sc/259/h/c4cf947d6971efda543abbe69958214b.png">
+    <img class="profile" src="https://fs.getcourse.ru/fileservice/file/download/a/534336/sc/158/h/4d07953529ab55a472c8c927f3a9dcf3.png">
+  </div>
+  <div class="content">
+    <div id="dialog" class="dialog width-container">
+      <!-- Пример сообщений -->
+    </div>
+  </div>
+  <div class="footer">
+    <div class="form width-container">
+      <input id="input" class="input" placeholder="Type your message...">
+      <button id="button" class="button">
+        Send
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+function getUserMessageHtml(message) {
+  return `
+  <div class="message-container">
+  <div class="message-user">
+  ${message}
+  </div>
+  </div>
+  `
+}
+
+function getAssistantMessageHtml(message) {
+  return `
+  <div class="message-container">
+  <div class="message-assistant">
+  ${message}
+  </div>
+  </div>
+  `
+}
+
+const messages = []
+
+const talk = function (data, success) {
+  return $.ajax({
+    type: 'POST',
+    contentType: 'application/json',
+    url: 'https://intensive-backend-technium.replit.app/talk',
+    data: JSON.stringify({
+      messages: data
+    }),
+    success: success,
+  })
+}
+
+const dialog = document.getElementById('dialog')
+const button = document.getElementById('button')
+const input = document.getElementById('input')
+
+button.addEventListener('click', function () {
+  const text = input.value.trim()
+  
+  if (!text) return
+
+  dialog.innerHTML += getUserMessageHtml(text)
+  input.value = ''
+
+  messages.push({
+    role: 'user',
+    text: text
+  })
+
+  talk(messages, function (data) {
+    dialog.innerHTML += getAssistantMessageHtml(data.answer)
+    
+    messages.push({
+      role: 'assistant',
+      text: data.answer
+    })
+    
+    dialog.scrollTop = dialog.scrollHeight
+  })
+})
+
+input.addEventListener('keypress', function (e) {
+  if (e.key === 'Enter') {
+    button.click()
+  }
+})
+</script>
+
+</body>
+</html>
