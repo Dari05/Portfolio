@@ -1,0 +1,163 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Participant form</title>
+
+  <!-- Шрифты и jQuery -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+ 
+  <!-- Стили -->
+  <style>
+    * {
+      font-family: 'Inter', sans-serif;
+      color: #444444;
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+    }
+
+    input {
+      box-shadow: none;
+      display: block;
+    }
+
+    button {
+      border: none;
+    }
+
+    .page-container {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #F8F8F8;
+    }
+
+    .content-container {
+      width: 600px;
+      padding: 64px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background-color: white;
+      box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.25);
+      border-radius: 10px;
+    }
+
+    .title {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: 0,48px;
+      margin-bottom: 18px;
+    }
+
+    .subtitle {
+      font-size: 15px;
+      margin-bottom: 64px;
+    }
+
+    .input {
+      border-radius: 18px;
+      border: 1px solid #DCDCDC;
+      background: #FFFFFF;
+      width: 300px;
+      height: 50px;
+      padding: 0 20px;
+      margin-bottom: 24px;
+    }
+
+    .button {
+      height: 50px;
+      width: 300px;
+      border-radius: 18px;
+      background: #6E51E0;
+      color: white;
+      font-size: 15px;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Форма -->
+  <div class="page-container">
+    <div class="content-container">
+      <div class="title">Participant Survey Form</div>
+      <div class="subtitle">Fill in all fields so we can get to know you better</div>
+      <input id="name" class="input" placeholder="Name">
+      <input id="age" class="input" placeholder="Age">
+      <input id="email" class="input" placeholder="E-mail">
+      <button id="button" class="button">Submit</button>
+    </div>
+  </div>
+
+  <!-- Скрипт -->
+  <script>
+    document
+      .getElementById("button")
+      .addEventListener("click", function () {
+        const name = document.getElementById("name");
+        const age = document.getElementById("age");
+        const email = document.getElementById("email");
+
+        $.post("https://backend.marathon.ivashev.com/save", {
+          name: name.value,
+          age: age.value,
+          email: email.value
+        }, function () {
+          alert("Data saved");
+        });
+      });
+  </script>
+
+</body>
+</html>
